@@ -43,13 +43,6 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    // const { username, password, confirmPassword } = req.body;
-
-    //     // Username and password validation logic here...
-    //     if (password !== confirmPassword) {
-    //         return res.status(400).json({ message: 'Passwords do not match' });
-    //     }
-    // Check if username or email already exists
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
       if (existingUser.username === username) {
@@ -72,24 +65,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-
-// router.post('/register', async (req, res) => {
-//   const { username, password } = req.body;
-
-//   // Check if user already exists
-//   const existingUser = await User.findOne({ username });
-//   if (existingUser) {
-//     return res.status(400).json({ message: 'Username already taken' });
-//   }
-
-//   // Hash the password before saving
-//   const hashedPassword = await bcrypt.hash(password, 12);
-
-//   const newUser = new User({ username, password: hashedPassword });
-//   await newUser.save();
-
-//   res.status(201).json({ message: 'User registered successfully' });
-// });
 
 
 
