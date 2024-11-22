@@ -27,7 +27,7 @@ const upload = multer({
 // Add product
 router.post('/add/products', upload.array('media', 5), async (req, res) => {
   try {
-    const { title, price, stockStatus, stockCount, gender, deliveryDays, description } = req.body;
+    const { title, price, categories, gender, stockStatus, stockCount, deliveryDays, description } = req.body;
     // Log incoming form data and file data
     console.log("Form data:", req.body);
     console.log("Files:", req.files);
@@ -45,9 +45,10 @@ router.post('/add/products', upload.array('media', 5), async (req, res) => {
     const product = new Product({
       title,
       price,
+      categories,
+      gender,
       stockStatus,
       stockCount: stockStatus === 'In Stock' ? stockCount : undefined,
-      gender,
       deliveryDays,
       description,
       media: compressedImages,
@@ -60,24 +61,45 @@ router.post('/add/products', upload.array('media', 5), async (req, res) => {
   }
 });
 
-// Get all products
+// Get all products with optional filters
 router.get('/', async (req, res) => {
   try {
-    const products = await Product.find();
-    // res.json(products);
+    // Extract filter parameters from query string
+    const { title, price, categories, gender, stockStatus } = req.query;
+
+    // Build a filter object based on the available query parameters
+    const filter = {};
+    if (title) {
+      filter.title = { $regex: title, $options: 'i' }; // Case-insensitive search for title
+    }
+    if (price) {
+      const [minPrice, maxPrice] = price.split('-'); // Assuming the price range is passed as "minPrice-maxPrice"
+      if (minPrice && maxPrice) {
+        filter.price = { $gte: minPrice, $lte: maxPrice };
+      }
+    }
+    if (categories) {
+      filter.categories = { $in: categories.split(',') }; // Assuming multiple categories are passed as comma-separated string
+    }
+    if (gender) {
+      filter.gender = gender; // Filter by gender
+    }
+    if (stockStatus) {
+      filter.stockStatus = stockStatus; // Filter by stock status
+    }
+
+    // Fetch products with the applied filters
+    const products = await Product.find(filter);
+
     // Convert each product's media buffer to base64
-    // Convert each image buffer in `media` to a base64 string
-    // res.set('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
     const productsWithBase64Media = products.map((product) => ({
       ...product._doc,
       media: product.media.map((buffer) => buffer.toString('base64')),
     }));
-    res.json(productsWithBase64Media);
-    
-    
 
+    res.json(productsWithBase64Media);
   } catch (err) {
-    console.error("Error fetching products:", error);
+    console.error("Error fetching products:", err);
     res.status(500).json({ message: "Failed to fetch products" });
   }
 });
@@ -85,7 +107,7 @@ router.get('/', async (req, res) => {
 // Update product
 router.put('/:id', upload.array('media', 5), async (req, res) => {
   try {
-    const { title, price, stockStatus, stockCount, gender, deliveryDays, description } = req.body;
+    const { title, price, categories, gender, stockStatus, stockCount, deliveryDays, description } = req.body;
     
     const compressedImages = req.files ? await Promise.all(
       req.files.map(async (file) => {
@@ -100,9 +122,10 @@ router.put('/:id', upload.array('media', 5), async (req, res) => {
     const updateData = {
       title,
       price,
+      categories,
+      gender,
       stockStatus,
       stockCount: stockStatus === 'In Stock' ? stockCount : undefined,
-      gender,
       deliveryDays,
       description,
     };
