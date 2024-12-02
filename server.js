@@ -7,7 +7,7 @@ const userRoutes = require('./routes/authRoutes');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const Product = require('./models/Product');
-
+const wishlist = require('./models/wishlistModel');
 
 const app = express();
 connectDB();
@@ -46,7 +46,8 @@ app.get('/api/messages', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes); // Mount the user routes at /api/users
 app.use('/api/products', require('./routes/products'));
-
+// app.use('/api/offers', require('./routes/offers'));
+// app.use('/api/wishlist', require('./routes/wishlist'));
 // Define your route to serve images by ID
 app.get('/:id', async (req, res) => {
     try {
