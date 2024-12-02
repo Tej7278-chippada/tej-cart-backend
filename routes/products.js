@@ -152,6 +152,28 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+
+// Like a product
+router.post('/:id/like', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    product.likes = (product.likes || 0) + 1; // Increment likes
+    await product.save();
+
+    res.status(200).json({ message: 'Like added successfully', likes: product.likes });
+  } catch (error) {
+    console.error('Error updating likes:', error);
+    res.status(500).json({ message: 'Error liking product' });
+  }
+});
+
+
 // Add a comment
 router.post('/products/:id/comment', async (req, res) => {
   const { id } = req.params;
