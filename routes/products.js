@@ -175,26 +175,26 @@ router.post('/:id/like', async (req, res) => {
 
 
 // Add a comment
-router.post('/products/:id/comment', async (req, res) => {
-  const { id } = req.params;
-  const { text } = req.body;
-
+router.post('/:id/comment', async (req, res) => {
   try {
+    const { id } = req.params;
+    const { text } = req.body;
+
     const product = await Product.findById(id);
     if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+      return res.status(404).json({ message: 'Product not found' });
     }
 
-    /* const newComment = { text }; */
-    product.comments.push({ text });
-    await product.save();
-    console.log('Product ID:', productId);
+    const newComment = { text, createdAt: new Date() };
+    product.comments.push(newComment);
 
-    res.status(200).json({ message: 'Comment added', comments: product.comments });
+    await product.save();
+    res.status(200).json(product);
   } catch (error) {
-    console.error("Failed to add comment:", error);
-    res.status(500).json({ message: 'Server error', error });
+    console.error('Error adding comment:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 module.exports = router;
