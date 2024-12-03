@@ -180,7 +180,12 @@ router.post('/:id/comment', async (req, res) => {
     const { id } = req.params;
     const { text } = req.body;
 
-    const product = await Product.findById(id);
+    const product = await Product.findById(id); 
+    // const product = await Product.findByIdAndUpdate(
+    //   id,
+    //   { $push: { comments: { text, createdAt: new Date() } } },
+    //   { new: true }
+    // );
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
@@ -196,5 +201,16 @@ router.post('/:id/comment', async (req, res) => {
   }
 });
 
-
+// router.get('/:id', async (req, res) => {
+//   try {
+//     const product = await Product.findById(req.params.id);
+//     if (!product) {
+//       return res.status(404).json({ message: 'Product not found' });
+//     }
+//     res.json(product);
+//   } catch (error) {
+//     console.error('Error fetching product by ID:', error);
+//     res.status(500).json({ message: 'Internal server error' });
+//   }
+// });
 module.exports = router;
