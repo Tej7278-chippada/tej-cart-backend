@@ -213,4 +213,23 @@ router.post('/:id/comment', async (req, res) => {
 //     res.status(500).json({ message: 'Internal server error' });
 //   }
 // });
+
+// Get a single product by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    const productWithBase64Media = {
+      ...product._doc,
+      media: product.media.map((buffer) => buffer.toString('base64')),
+    };
+    res.json(productWithBase64Media);
+  } catch (err) {
+    console.error('Error fetching product by ID:', err);
+    res.status(500).json({ message: 'Error fetching product details' });
+  }
+});
+
 module.exports = router;

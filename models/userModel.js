@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   phone: { type: String, required: true },
-  wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+  wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product', addedAt: { type: Date, default: Date.now } }],
   otp: { type: Number },
   otpExpiry: { type: Date }
 });

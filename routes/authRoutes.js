@@ -108,6 +108,28 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Refresh Token Route
+router.post('/refresh-token', (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(403).json({ message: 'No token provided' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'defaultSecretKey');
+    const newToken = jwt.sign(
+      { id: decoded.id, tokenUsername: decoded.tokenUsername },
+      process.env.JWT_SECRET || 'defaultSecretKey',
+      { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
+    );
+
+    return res.status(200).json({ authToken: newToken });
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+});
+
+
 router.get('/search', searchUsernames); // Define search route
 // router.post('/forgot-password', requestOtp);
 // router.post('/reset-password', resetPassword);
