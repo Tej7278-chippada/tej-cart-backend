@@ -4,6 +4,9 @@ const multer = require('multer');
 const Product = require('../models/Product');
 const router = express.Router();
 const sharp = require('sharp');
+const { authMiddleware } = require('../middleware/auth');
+const User = require('../models/userModel');
+
 
 // Multer setup for file uploads // Backend: Setting up Multer to accept a "media" field for images or videos
 // const storage = multer.diskStorage({
@@ -154,22 +157,43 @@ router.delete('/:id', async (req, res) => {
 
 
 // Like a product
-router.post('/:id/like', async (req, res) => {
+// Toggle like on a product
+router.post('/:id/like', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-    const product = await Product.findById(id);
+    const userId = req.user.id; // Get the logged-in user ID from the middleware
 
+    const product = await Product.findById(id);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    product.likes = (product.likes || 0) + 1; // Increment likes
+    const user = await User.findById(userId); // Get the user
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if user already liked the product
+    const likedIndex = user.likedProducts?.indexOf(id);
+
+    if (likedIndex !== -1) {
+      // If already liked, remove the like
+      user.likedProducts.splice(likedIndex, 1);
+      product.likes = Math.max(product.likes - 1, 0); // Prevent negative likes
+    } else {
+      // If not liked, add the like
+      user.likedProducts = user.likedProducts || [];
+      user.likedProducts.push(id);
+      product.likes += 1;
+    }
+
+    await user.save();
     await product.save();
 
-    res.status(200).json({ message: 'Like added successfully', likes: product.likes });
+    res.status(200).json({ message: 'Like toggled successfully', likes: product.likes });
   } catch (error) {
-    console.error('Error updating likes:', error);
-    res.status(500).json({ message: 'Error liking product' });
+    console.error('Error toggling likes:', error);
+    res.status(500).json({ message: 'Error toggling likes' });
   }
 });
 
