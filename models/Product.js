@@ -8,7 +8,6 @@ const ProductSchema = new mongoose.Schema({
   gender: { type: String, enum: ['Male', 'Female', 'Kids'], required: true },
   stockStatus: { type: String, enum: ['In Stock', 'Out-of-stock', 'Getting Ready'], required: true },
   stockCount: { type: Number },
-  
   deliveryDays: { type: Number, required: true },
   description: { type: String, required: true},
   media: [Buffer], // Store images as Buffer data

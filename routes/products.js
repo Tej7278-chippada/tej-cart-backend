@@ -239,21 +239,30 @@ router.post('/:id/comment', async (req, res) => {
 // });
 
 // Get a single product by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
+
+    const userId = req.user.id; // Get the logged-in user ID
+    const user = await User.findById(userId);
+
+    const isLiked = user.likedProducts?.includes(product._id.toString()); // Check if user liked the product
+
     const productWithBase64Media = {
       ...product._doc,
       media: product.media.map((buffer) => buffer.toString('base64')),
+      likedByUser: isLiked, // Add the liked status for this user
     };
+
     res.json(productWithBase64Media);
   } catch (err) {
     console.error('Error fetching product by ID:', err);
     res.status(500).json({ message: 'Error fetching product details' });
   }
 });
+
 
 module.exports = router;
