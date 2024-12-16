@@ -199,10 +199,11 @@ router.post('/:id/like', authMiddleware, async (req, res) => {
 
 
 // Add a comment
-router.post('/:id/comment', async (req, res) => {
+router.post('/:id/comment', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const { text } = req.body;
+    const user = req.user; // Extracted user info from the auth token
 
     const product = await Product.findById(id); 
     // const product = await Product.findByIdAndUpdate(
@@ -214,7 +215,9 @@ router.post('/:id/comment', async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    const newComment = { text, createdAt: new Date() };
+    const newComment = { text, createdAt: new Date(),
+      username: user.tokenUsername, // Add username from token
+     };
     product.comments.push(newComment);
 
     await product.save();

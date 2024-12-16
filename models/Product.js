@@ -13,7 +13,7 @@ const ProductSchema = new mongoose.Schema({
   media: [Buffer], // Store images as Buffer data
   videos: [String],
   likes: { type: Number, default: 0 },
-  comments: [{ text: String, createdAt: { type: Date, default: Date.now } }],
+  comments: [{ text: String, username: String, createdAt: { type: Date, default: Date.now } }],
 });
 
 module.exports = mongoose.model('Product', ProductSchema);
