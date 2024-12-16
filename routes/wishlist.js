@@ -117,10 +117,19 @@ router.get('/', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(userId).populate('wishlist');
         if (!user) return res.status(404).json({ message: 'User not found' });
-        res.status(200).json({ wishlist: user.wishlist });
+
+        // Convert wishlist product media buffers to base64
+        const wishlistWithMedia = user.wishlist.map((product) => ({
+            ...product._doc,
+            media: product.media.map((buffer) => buffer.toString('base64')),
+        }));
+
+        res.status(200).json({ wishlist: wishlistWithMedia });
     } catch (error) {
+        console.error('Error fetching wishlist:', error);
         res.status(500).json({ message: 'Server error', error });
     }
 });
+
 
 module.exports = router;
