@@ -93,7 +93,7 @@ router.post('/login', async (req, res) => {
       expiresIn: process.env.JWT_EXPIRES_IN || '1h',
     });
     console.log('Login successful:', user); // Log successful login
-
+    console.log('Login successful:', authToken);
     
 
     // Respond with success message, token, and username
@@ -117,15 +117,18 @@ router.post('/refresh-token', (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'defaultSecretKey');
+    // Issue a new token with a refreshed expiry time
     const newToken = jwt.sign(
       { id: decoded.id, tokenUsername: decoded.tokenUsername },
       process.env.JWT_SECRET || 'defaultSecretKey',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
+      { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }// New 1-hour expiry
     );
 
     return res.status(200).json({ authToken: newToken });
+    // console.log('authToken refreshed..!:', newToken);
   } catch (err) {
-    return res.status(401).json({ message: 'Invalid token' });
+    return res.status(401).json({ message: 'Refresh token failed. Token expired or invalid.' });
+    // console.log('Refresh token failed. Token expired or invalid.');
   }
 });
 
