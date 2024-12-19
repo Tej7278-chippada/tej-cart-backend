@@ -4,6 +4,7 @@ const express = require('express');
 require('dotenv').config(); // Load .env variables
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/authRoutes');
+const sellerRoutes = require('./routes/sellerAccountRoutes');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const Product = require('./models/Product');
@@ -44,8 +45,10 @@ app.get('/api/messages', async (req, res) => {
 
 // Define routes
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes); // Mount the user routes at /api/users
+// app.use('/api/users', userRoutes); // Mount the user routes at /api/users
+app.use('/api/seller', sellerRoutes); // Mount the user routes at /api/users
 app.use('/api/products', require('./routes/products'));
+app.use('/api/productSeller', require('./routes/productRoutes'));
 // app.use('/api/offers', require('./routes/offers'));
 app.use('/api/wishlist', require('./routes/wishlist'));
 // Define your route to serve images by ID
@@ -64,7 +67,7 @@ app.get('/:id', async (req, res) => {
     }
   });
 const PORT = process.env.PORT || 5009;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port http://192.168.156.172:${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port http://192.168.16.172:${PORT}`));
 
 // Connect to MongoDB
 // mongoose.connect(process.env.MONGO_URI)
