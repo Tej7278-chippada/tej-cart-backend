@@ -9,6 +9,8 @@ const { searchUsernamesSeller, requestOtp, resetPassword } = require('../control
 const nodemailer = require('nodemailer');
 const twilio = require('twilio');
 const Seller = require('../models/sellerModel');
+const multer = require('multer');
+const sharp = require('sharp');
 
 // Secret key for JWT (make sure this is in your .env file)
 // const JWT_SECRET = process.env.JWT_SECRET || 'qwertyuiop'; //secret key
@@ -26,9 +28,14 @@ const transporter = nodemailer.createTransport({
 // Initialize Twilio client
 const twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 
+// Initialize multer with memory storage
+const upload = multer({
+  limits: { fileSize: 2 * 1024 * 1024 }, // Limit file size to 2MB
+  storage: multer.memoryStorage(),
+});
 
 // Seller Registration
-router.post('/sellerRegister', async (req, res) => {
+router.post('/sellerRegister', upload.single('profilePic'), async (req, res) => {
   const { username, sellerTitle, password, phone, email, address } = req.body;
 
   // Username and password validation
@@ -55,8 +62,17 @@ router.post('/sellerRegister', async (req, res) => {
       }
     }
 
+    // Process the uploaded profile picture
+    let profilePicBuffer = null;
+    if (req.file) {
+      profilePicBuffer = await sharp(req.file.buffer)
+        .resize({ width: 300, height: 300 })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+    }
+
     // Create and save the new user
-    const newSeller = new Seller({ username, sellerTitle, password, phone, email, address});
+    const newSeller = new Seller({ username, sellerTitle, password, phone, email, address: JSON.parse(address), profilePic: profilePicBuffer,});
     await newSeller.save();
 
     console.log('Registered seller:', newSeller); // Log the newly saved seller

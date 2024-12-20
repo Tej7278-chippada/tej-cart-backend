@@ -306,11 +306,11 @@ router.get('/:id', async (req, res) => {
       media: product.media.map((buffer) => buffer.toString('base64')),
     };
 
-    if (req.user) {
+    if (req.seller) {
       // If the user is authenticated, include likedByUser info
-      const userId = req.user.id;
-      const user = await User.findById(userId);
-      const isLiked = user.likedProducts?.includes(product._id.toString());
+      const sellerId = req.seller.id;
+      const seller = await Seller.findById(sellerId);
+      const isLiked = seller.likedProducts?.includes(product._id.toString());
       productWithBase64Media.likedByUser = isLiked;
     }
 
