@@ -70,8 +70,13 @@ router.get('/my-products', authSellerMiddleware, async (req, res) => {
     if (!products) {
       return res.status(404).json({ message: 'No products found for this seller.' });
     }
+    // Convert each product's media buffer to base64
+    const productsWithBase64Media = products.map((product) => ({
+      ...product._doc,
+      media: product.media.map((buffer) => buffer.toString('base64')),
+    }));
     
-    res.status(200).json( products );
+    res.status(200).json( productsWithBase64Media );
   } catch (err) {
     console.error('Error fetching seller products:', err);
     res.status(500).json({ message: 'Failed to fetch seller products' });
