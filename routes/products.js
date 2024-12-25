@@ -68,7 +68,7 @@ router.post('/add/products', upload.array('media', 5), async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     // Extract filter parameters from query string
-    const { title, price, categories, gender, stockStatus } = req.query;
+    const { title, price, categories, gender, stockStatus, page = 1, limit = 12 } = req.query;
 
     // Build a filter object based on the available query parameters
     const filter = {};
@@ -91,8 +91,14 @@ router.get('/', async (req, res) => {
       filter.stockStatus = stockStatus; // Filter by stock status
     }
 
+    const skip = (page - 1) * limit; // Calculate documents to skip
+    
     // Fetch products with the applied filters
-    const products = await Product.find(filter);
+    const products = await Product.find(filter)
+    .skip(skip)
+    .limit(Number(limit)); // Fetch only the current page's products
+    const totalProducts = await Product.countDocuments(filter); // Total number of products matching the filter
+
 
     // Convert each product's media buffer to base64
     const productsWithBase64Media = products.map((product) => ({
@@ -100,7 +106,12 @@ router.get('/', async (req, res) => {
       media: product.media.map((buffer) => buffer.toString('base64')),
     }));
 
-    res.json(productsWithBase64Media);
+    res.json({
+      products: productsWithBase64Media,
+      totalProducts,
+      totalPages: Math.ceil(totalProducts / limit),
+      // currentPage: parseInt(page),
+    });
   } catch (err) {
     console.error("Error fetching products:", err);
     res.status(500).json({ message: "Failed to fetch products" });
