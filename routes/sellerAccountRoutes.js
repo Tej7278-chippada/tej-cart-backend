@@ -11,6 +11,8 @@ const twilio = require('twilio');
 const Seller = require('../models/sellerModel');
 const multer = require('multer');
 const sharp = require('sharp');
+const { authSellerMiddleware } = require('../middleware/sellerAuth');
+const Product = require('../models/productModel');
 
 // Secret key for JWT (make sure this is in your .env file)
 // const JWT_SECRET = process.env.JWT_SECRET || 'qwertyuiop'; //secret key
@@ -119,6 +121,7 @@ router.post('/sellerLogin', async (req, res) => {
       message: `You are logged in with ${identifier.includes('@') ? 'email' : 'username'}: ${identifier}`,
       authTokenSeller,
       tokenSellerUsername: seller.username,
+      sellerId: seller._id, // Add this
     });
   } catch (error) {
     console.error('Error logging in:', error);
@@ -269,21 +272,119 @@ router.post('/sellerReset-password', async (req, res) => {
   }
 });
 
-// Get Seller Details
-router.get('/:sellerId', async (req, res) => {
-  const { sellerId } = req.params;
+// // Get Seller Details
+// router.get('/:sellerId', async (req, res) => {
+//   const { sellerId } = req.params;
 
+//   try {
+//     const seller = await Seller.findOne({ sellerId }).select('-password');
+//     if (!seller) {
+//       return res.status(404).json({ message: 'Seller not found.' });
+//     }
+
+//     res.status(200).json(seller);
+//   } catch (error) {
+//     console.error('Error fetching seller details:', error);
+//     res.status(500).json({ message: 'Error fetching seller details', error });
+//   }
+// });
+
+// Get seller details
+router.get('/details', authSellerMiddleware, async (req, res) => {
   try {
-    const seller = await Seller.findOne({ sellerId }).select('-password');
+    const seller = await Seller.findById(req.seller.id).populate('wishlist');
     if (!seller) {
-      return res.status(404).json({ message: 'Seller not found.' });
+      return res.status(404).json({ message: 'Seller not found' });
     }
-
-    res.status(200).json(seller);
+    // Fetch seller's products (if they have a products model)
+    const products = await Product.find({ seller: req.seller.id }); // Replace `Product` with your actual products model
+    res.status(200).json({ ...seller.toObject(), products });
   } catch (error) {
     console.error('Error fetching seller details:', error);
-    res.status(500).json({ message: 'Error fetching seller details', error });
+    res.status(500).json({ message: 'Failed to fetch seller details.' });
   }
 });
+
+// Delete seller account
+router.delete('/delete', authSellerMiddleware, async (req, res) => {
+  try {
+    const seller = await Seller.findById(req.seller.id);
+    if (!seller) {
+      return res.status(404).json({ message: 'Seller not found' });
+    }
+    await Product.deleteMany({ seller: req.seller.id }); // Delete all products added by the seller
+    await Seller.findByIdAndDelete(req.seller.id);
+    res.status(200).json({ message: 'Seller account deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting seller account:', error);
+    res.status(500).json({ message: 'Failed to delete seller account.' });
+  }
+});
+
+// Route to get seller profile
+router.get('/:id', authSellerMiddleware, async (req, res) => {
+  const { id } = req.params;
+
+  if (req.seller.id !== id) return res.status(403).json({ message: 'Unauthorized access' });
+
+  try {
+    const seller = await Seller.findById(id).select('-password');
+    if (!seller) return res.status(404).json({ message: 'Seller not found' });
+    // Convert profilePic to Base64 string if it exists
+    const sellerData = seller.toObject();
+    if (seller.profilePic) {
+      sellerData.profilePic = seller.profilePic.toString('base64');
+    }
+
+    res.json(sellerData);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Route to update seller profile
+router.put('/:id', authSellerMiddleware, async (req, res) => {
+  const { name, email, phone, address, password } = req.body;
+  try {
+    const seller = await Seller.findById(req.params.id);
+    if (!seller) return res.status(404).json({ message: 'Seller not found' });
+
+    // Update fields
+    if (name) seller.name = name;
+    if (email) seller.email = email;
+    if (phone) seller.phone = phone;
+    if (address) seller.address = address;
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      seller.password = await bcrypt.hash(password, salt);
+    }
+
+    await seller.save();
+    res.json({ message: 'Profile updated successfully', seller });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Route to delete seller account
+router.delete('/:id', authSellerMiddleware, async (req, res) => {
+  const { id } = req.params;
+
+  if (req.seller.id !== id) return res.status(403).json({ message: 'Unauthorized access' });
+
+  try {
+    const seller = await Seller.findById(req.seller.id);
+    if (!seller) {
+      return res.status(404).json({ message: 'Seller not found' });
+    }
+    await Product.deleteMany({ sellerId: req.seller.id }); // Delete all products added by the seller
+    await Seller.findByIdAndDelete(req.seller.id);
+    res.status(200).json({ message: 'Seller account deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting seller account:', error);
+    res.status(500).json({ message: 'Failed to delete seller account.' });
+  }
+});
+
 
 module.exports = router;
