@@ -8,7 +8,8 @@ const router = express.Router();
 const { searchUsernames, requestOtp, resetPassword } = require('../controllers/userController');
 const nodemailer = require('nodemailer');
 const twilio = require('twilio');
-
+const multer = require('multer');
+const sharp = require('sharp');
 // Secret key for JWT (make sure this is in your .env file)
 // const JWT_SECRET = process.env.JWT_SECRET || 'qwertyuiop'; //secret key
 
@@ -25,9 +26,14 @@ const transporter = nodemailer.createTransport({
 // Initialize Twilio client
 const twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 
+// Initialize multer with memory storage
+const upload = multer({
+  limits: { fileSize: 2 * 1024 * 1024 }, // Limit file size to 2MB
+  storage: multer.memoryStorage(),
+});
 
 // POST /api/auth/register
-router.post('/register', async (req, res) => {
+router.post('/register', upload.single('profilePic'), async (req, res) => {
   const { username, password, phone, email } = req.body;
 
   // Username and password validation
@@ -53,8 +59,17 @@ router.post('/register', async (req, res) => {
       }
     }
 
+    // Process the uploaded profile picture
+    let profilePicBuffer = null;
+    if (req.file) {
+      profilePicBuffer = await sharp(req.file.buffer)
+        .resize({ width: 300, height: 300 })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+    }
+
     // Create and save the new user
-    const newUser = new User({ username, password, phone, email});
+    const newUser = new User({ username, password, phone, email, profilePic: profilePicBuffer,});
     await newUser.save();
 
     console.log('Registered user:', newUser); // Log the newly saved user
