@@ -10,6 +10,7 @@ const nodemailer = require('nodemailer');
 const twilio = require('twilio');
 const multer = require('multer');
 const sharp = require('sharp');
+const { authMiddleware } = require('../middleware/auth');
 // Secret key for JWT (make sure this is in your .env file)
 // const JWT_SECRET = process.env.JWT_SECRET || 'qwertyuiop'; //secret key
 
@@ -116,6 +117,7 @@ router.post('/login', async (req, res) => {
       message: `You are logged in with ${identifier.includes('@') ? 'email' : 'username'}: ${identifier}`,
       authToken,
       tokenUsername: user.username,
+      userId: user._id, // for returning user details
     });
   } catch (error) {
     console.error('Error logging in:', error);
@@ -263,6 +265,48 @@ router.post('/reset-password', async (req, res) => {
     res.json({ message: 'Password reset successful' });
   } catch (error) {
     res.status(500).json({ message: 'Error resetting password', error });
+  }
+});
+
+
+// Route to get seller profile
+router.get('/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+
+  if (req.user.id !== id) return res.status(403).json({ message: 'Unauthorized access' });
+
+  try {
+    const user = await User.findById(id).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    // Convert profilePic to Base64 string if it exists
+    const userData = user.toObject();
+    if (user.profilePic) {
+      userData.profilePic = user.profilePic.toString('base64');
+    }
+
+    res.json(userData);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Route to delete seller account
+router.delete('/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+
+  if (req.user.id !== id) return res.status(403).json({ message: 'Unauthorized access' });
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'Seller not found' });
+    }
+    // await Product.deleteMany({ userId: req.user.id }); // Delete all products added by the seller
+    await User.findByIdAndDelete(req.user.id);
+    res.status(200).json({ message: 'User account deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting seller account:', error);
+    res.status(500).json({ message: 'Failed to delete seller account.' });
   }
 });
 
