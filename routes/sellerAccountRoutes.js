@@ -52,6 +52,14 @@ router.post('/sellerRegister', upload.single('profilePic'), async (req, res) => 
     return res.status(400).json({ message: 'Invalid password format.' });
   }
 
+  if (!email.includes('@') || !email.endsWith('.com')) {
+    return res.status(400).json({ message: 'Invalid mail id.' });
+  }
+
+  if (phone.length < 10 || !/^\d+$/.test(phone)) {
+    return res.status(400).json({ message: 'Invalid mobile number.' });
+  }
+
   try {
     // Check if seller already exists
     const existingSeller = await Seller.findOne({ $or: [{ username }, { email }] });
@@ -76,6 +84,14 @@ router.post('/sellerRegister', upload.single('profilePic'), async (req, res) => 
     // Create and save the new user
     const newSeller = new Seller({ username, sellerTitle, password, phone, email, address: JSON.parse(address), profilePic: profilePicBuffer,});
     await newSeller.save();
+
+    // Send email notification
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Welcome to TejCart',
+      text: `Your TejCart Seller account has seller Titile of ${sellerTitle} created successfully, and binded with this mail id ${email}.`,
+    });
 
     console.log('Registered seller:', newSeller); // Log the newly saved seller
     res.status(201).json({ message: `Your new account created with username: ${newSeller.username} and ${newSeller.sellerTitle}` });
