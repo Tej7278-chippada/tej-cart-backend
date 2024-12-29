@@ -11,6 +11,13 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, required: true },
   likedProducts: { type: [mongoose.Schema.Types.ObjectId], ref: 'Product', default: [] },
   wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product', addedAt: { type: Date, default: Date.now } }],
+  deliveryAddresses: [{ name: String, phone: String, email: String, address: {
+    street: { type: String, required: true },
+    area: { type: String, required: true },
+    city: { type: String, required: true },
+    state: { type: String, required: true },
+    pincode: { type: String, required: true },
+  }, createdAt: { type: Date, default: Date.now } }],
   otp: { type: Number },
   otpExpiry: { type: Date }
 });

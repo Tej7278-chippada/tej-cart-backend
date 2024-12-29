@@ -9,6 +9,10 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const Product = require('./models/Product');
 const wishlist = require('./models/wishlistModel');
+const Razorpay = require("razorpay");
+const orderRoutes = require("./routes/orders");
+const paymentRoutes = require("./routes/Payment");
+
 
 const app = express();
 connectDB();
@@ -20,6 +24,10 @@ app.use(express.urlencoded({ extended: true })); // for parsing application/x-ww
 // Allow CORS
 app.use(cors());
 
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 
 // const connectDB = async () => {
@@ -51,6 +59,8 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/productSeller', require('./routes/productRoutes'));
 // app.use('/api/offers', require('./routes/offers'));
 app.use('/api/wishlist', require('./routes/wishlist'));
+app.use("/api/orders", orderRoutes);
+app.use("/api/payments", paymentRoutes);
 // Define your route to serve images by ID
 app.get('/:id', async (req, res) => {
     try {
@@ -67,7 +77,7 @@ app.get('/:id', async (req, res) => {
     }
   });
 const PORT = process.env.PORT || 5009;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port http://192.168.20.172:${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port http://192.168.0.172:${PORT}`));
 
 // Connect to MongoDB
 // mongoose.connect(process.env.MONGO_URI)

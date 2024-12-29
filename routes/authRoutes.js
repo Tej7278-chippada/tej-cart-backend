@@ -11,6 +11,7 @@ const twilio = require('twilio');
 const multer = require('multer');
 const sharp = require('sharp');
 const { authMiddleware } = require('../middleware/auth');
+const Order = require('../models/Order');
 // Secret key for JWT (make sure this is in your .env file)
 // const JWT_SECRET = process.env.JWT_SECRET || 'qwertyuiop'; //secret key
 
@@ -286,13 +287,13 @@ router.post('/reset-password', async (req, res) => {
 
 
 // Route to get seller profile
-router.get('/:id', authMiddleware, async (req, res) => {
-  const { id } = req.params;
+router.get('/:userId', authMiddleware, async (req, res) => {
+  const { userId } = req.params;
 
-  if (req.user.id !== id) return res.status(403).json({ message: 'Unauthorized access' });
+  if (req.user.id !== userId) return res.status(403).json({ message: 'Unauthorized access' });
 
   try {
-    const user = await User.findById(id).select('-password');
+    const user = await User.findById(userId).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
     // Convert profilePic to Base64 string if it exists
     const userData = user.toObject();
@@ -325,5 +326,82 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Failed to delete seller account.' });
   }
 });
+
+// Route to fetch user data
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password'); // Exclude password
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Convert profilePic to Base64 string if it exists
+    const userData = user.toObject();
+    if (user.profilePic) {
+      userData.profilePic = user.profilePic.toString('base64');
+    }
+
+    res.status(200).json(userData);
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    res.status(500).json({ message: 'Error fetching user data', error });
+  }
+});
+
+// Route to save user address
+router.post('/address', authMiddleware, async (req, res) => {
+  try {
+    const { name, phone, email, address } = req.body;
+
+    if (!name || !phone || !email || !address || !address.street || !address.area || !address.city || !address.state || !address.pincode) {
+      return res.status(400).json({ message: 'Incomplete address details' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const newAddress = {
+      name,
+      phone,
+      email,
+      address: {
+        street: address.street,
+        area: address.area,
+        city: address.city,
+        state: address.state,
+        pincode: address.pincode,
+      },
+      createdAt: new Date(),
+    };
+
+    user.deliveryAddresses.push(newAddress);
+    await user.save();
+
+    res.status(201).json({ message: 'Address saved successfully', deliveryAddresses:  user.deliveryAddresses });
+  } catch (error) {
+    console.error('Error saving address:', error);
+    res.status(500).json({ message: 'Error saving address', error });
+  }
+});
+
+// Route to fetch user orders
+router.get('/orders', authMiddleware, async (req, res) => {
+  try {
+    // Assuming orders are stored in a separate collection with a reference to the user
+    const orders = await Order.find({ userId: req.user.id }).populate('products.productId', 'name price'); // Populate product details
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ message: 'No orders found' });
+    }
+
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error('Error fetching user orders:', error);
+    res.status(500).json({ message: 'Error fetching user orders', error });
+  }
+});
+
+
 
 module.exports = router;

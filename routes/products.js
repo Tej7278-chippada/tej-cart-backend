@@ -307,5 +307,18 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Get only the stockCount of a product by ID
+router.get('/:id/stock', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id, 'stockCount');
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.json({ stockCount: product.stockCount });
+  } catch (err) {
+    console.error('Error fetching product stock count:', err);
+    res.status(500).json({ message: 'Error fetching product stock count' });
+  }
+});
 
 module.exports = router;
