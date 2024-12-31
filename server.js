@@ -1,7 +1,9 @@
 // server.js
 const express = require('express');
+const bodyParser = require("body-parser");
 // const mongoose = require('mongoose');
 require('dotenv').config(); // Load .env variables
+const dotenv = require("dotenv");
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/authRoutes');
 const sellerRoutes = require('./routes/sellerAccountRoutes');
@@ -12,9 +14,13 @@ const wishlist = require('./models/wishlistModel');
 const Razorpay = require("razorpay");
 const orderRoutes = require("./routes/orders");
 const paymentRoutes = require("./routes/Payment");
+const paymentModel = require('./models/paymentModel');
 
-
+dotenv.config();
 const app = express();
+// Increase payload size
+app.use(bodyParser.json({ limit: "10mb" })); // Adjust size as per your requirement
+app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 connectDB();
 // Add these lines to parse JSON and URL-encoded data
 // Middleware
@@ -60,7 +66,86 @@ app.use('/api/productSeller', require('./routes/productRoutes'));
 // app.use('/api/offers', require('./routes/offers'));
 app.use('/api/wishlist', require('./routes/wishlist'));
 app.use("/api/orders", orderRoutes);
-app.use("/api/payments", paymentRoutes);
+// app.use("/api/payments", paymentRoutes);
+
+// Payment Route
+app.post("/api/payments", async (req, res) => {
+  const { amount, contact, email, payment_method } = req.body; // Include contact and email in the request
+  try {
+    const order = await razorpay.orders.create({
+      amount: amount * 100, // Amount in paise
+      currency: "INR",
+      receipt: `receipt_order_${Date.now()}`,
+    });
+
+    // Save order details to MongoDB
+    const payment = new paymentModel({
+      razorpay_order_id: order.id,
+      amount: order.amount / 100, // Convert paise to rupees
+      currency: order.currency,
+      status: "created",
+      created_at: new Date(),
+      contact : contact || "N/A",
+      email : email || "N/A",
+      payment_method : payment_method || "N/A",
+    });
+    await payment.save();
+
+    res.json(order);
+  } catch (error) {
+    console.error("Razorpay order creation failed:", error);
+    res.status(500).json({ error: "Failed to create Razorpay order" });
+  }
+});
+
+
+app.post("/api/payments/update", async (req, res) => {
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature, status,
+    contact,
+    email,
+    payment_method, } = req.body;
+
+  try {
+    // Verify payment signature (optional but recommended for security)
+    const crypto = require("crypto");
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest("hex");
+
+    if (razorpay_signature !== expectedSignature) {
+      return res.status(400).json({ error: "Invalid payment signature" });
+    }
+
+    // Update the payment status in the database
+    const updatedPayment = await paymentModel.findOneAndUpdate(
+      { razorpay_order_id },
+      {
+        razorpay_payment_id,
+        status: "captured",
+        contact : contact || "N/A",
+        email : email || "N/A",
+        payment_method : payment_method || "N/A",
+        updated_at: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!updatedPayment) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.json(updatedPayment);
+  } catch (error) {
+    console.error("Error updating payment:", error);
+    res.status(500).json({ error: "Failed to update payment" });
+  }
+});
+
+
+
+
+
 // Define your route to serve images by ID
 app.get('/:id', async (req, res) => {
     try {

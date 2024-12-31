@@ -32,6 +32,23 @@ const sellerSchema = new mongoose.Schema({
     ref: 'Product', 
     addedAt: { type: Date, default: Date.now }
   }],
+  orders: [
+    {
+      orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true }, // Order reference
+      buyerInfo: {
+        email: { type: String, required: true },
+        username: { type: String, required: true },
+        phone: { type: String, required: true }
+      },
+      userDeliveryAddresses: [{ name: String, phone: String, email: String, address: {
+        street: { type: String, required: true },
+        area: { type: String, required: true },
+        city: { type: String, required: true },
+        state: { type: String, required: true },
+        pincode: { type: String, required: true },
+      }, createdAt: { type: Date, default: Date.now } }],
+    }
+  ],
   otp: { type: Number },
   otpExpiry: { type: Date }
 });

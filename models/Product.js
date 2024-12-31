@@ -14,6 +14,8 @@ const ProductSchema = new mongoose.Schema({
   videos: [String],
   likes: { type: Number, default: 0 },
   comments: [{ text: String, username: String, createdAt: { type: Date, default: Date.now } }],
+  sellerTitle: { type: String, required: true }, // Bind to seller's title
+  sellerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Seller', required: true } // Bind to seller's ID
 });
 
 module.exports = mongoose.model('Product', ProductSchema);
