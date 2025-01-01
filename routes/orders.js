@@ -14,7 +14,7 @@ const sharp = require("sharp");
 // Place Order
 router.post("/", authMiddleware, async (req, res) => {
   try {
-    const { productId, orderPrice, deliveryAddress, paymentStatus } = req.body;
+    const { productId, productTitle, orderPrice, deliveryAddress, paymentStatus, sellerTitle } = req.body;
     // const { name, phone, email, address } = deliveryAddress; // Extract fields
     const userId = req.user.id;
 
@@ -39,12 +39,20 @@ router.post("/", authMiddleware, async (req, res) => {
       createdAt: new Date(),
     };
 
+    // Process the first image as Base64
+    const productPicBuffer = product.media[0]
+      ? await sharp(product.media[0]).resize(300, 300).jpeg().toBuffer()
+      : null;
+
     const order = new Order({
       user: userId,
       product: productId,
+      productTitle,
+      productPic: productPicBuffer, // Save the first image buffer
       orderPrice,
       userDeliveryAddresses: [userDeliveryAddress], // Save as an array
       paymentStatus,
+      sellerTitle,
       createdAt: new Date(),
     });
 
@@ -78,7 +86,7 @@ router.post("/", authMiddleware, async (req, res) => {
   }
 });
 
-// Send Order Confirmation Email
+// Send Order Confirmation Email to user
 router.post("/send-email", authMiddleware, async (req, res) => {
   try {
     const { email, product, deliveryAddress, sellerTitle } = req.body;
@@ -141,28 +149,18 @@ router.get("/my-orders", authMiddleware, async (req, res) => {
   }
 });
 
-// Get a single product by ID
+// Get a single order by ID
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-
-    // const productWithBase64Media = {
-    //   ...product._doc,
-    //   media: product.media.map((buffer) => buffer.toString('base64')),
-    // };
-
-    // if (req.user) {
-    //   // If the user is authenticated, include likedByUser info
-    //   const userId = req.user.id;
-    //   const user = await User.findById(userId);
-    //   const isLiked = user.likedProducts?.includes(product._id.toString());
-    //   productWithBase64Media.likedByUser = isLiked;
-    // }
-
-    res.json(order); //res.json(productWithBase64Media);
+    const orderData = order.toObject();
+    if (order.productPic) {
+      orderData.productPic = order.productPic.toString('base64');
+    }
+     res.json(orderData);
   } catch (err) {
     console.error('Error fetching order by ID:', err);
     res.status(500).json({ message: 'Error fetching order details' });
