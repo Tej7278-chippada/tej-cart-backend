@@ -14,7 +14,7 @@ const sharp = require("sharp");
 // Place Order
 router.post("/", authMiddleware, async (req, res) => {
   try {
-    const { productId, deliveryAddress, paymentStatus } = req.body;
+    const { productId, orderPrice, deliveryAddress, paymentStatus } = req.body;
     // const { name, phone, email, address } = deliveryAddress; // Extract fields
     const userId = req.user.id;
 
@@ -42,6 +42,7 @@ router.post("/", authMiddleware, async (req, res) => {
     const order = new Order({
       user: userId,
       product: productId,
+      orderPrice,
       userDeliveryAddresses: [userDeliveryAddress], // Save as an array
       paymentStatus,
       createdAt: new Date(),
