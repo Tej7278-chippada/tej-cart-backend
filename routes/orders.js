@@ -141,4 +141,32 @@ router.get("/my-orders", authMiddleware, async (req, res) => {
   }
 });
 
+// Get a single product by ID
+router.get('/:id', authMiddleware, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // const productWithBase64Media = {
+    //   ...product._doc,
+    //   media: product.media.map((buffer) => buffer.toString('base64')),
+    // };
+
+    // if (req.user) {
+    //   // If the user is authenticated, include likedByUser info
+    //   const userId = req.user.id;
+    //   const user = await User.findById(userId);
+    //   const isLiked = user.likedProducts?.includes(product._id.toString());
+    //   productWithBase64Media.likedByUser = isLiked;
+    // }
+
+    res.json(order); //res.json(productWithBase64Media);
+  } catch (err) {
+    console.error('Error fetching order by ID:', err);
+    res.status(500).json({ message: 'Error fetching order details' });
+  }
+});
+
 module.exports = router;
