@@ -89,20 +89,23 @@ router.post("/", authMiddleware, async (req, res) => {
 // Send Order Confirmation Email to user
 router.post("/send-email", authMiddleware, async (req, res) => {
   try {
-    const { email, product, deliveryAddress, sellerTitle } = req.body;
+    const { email, product, deliverTo, contactTo, deliveryAddress, deliveryDate, sellerTitle } = req.body;
 
-    // Ensure media is a valid Buffer
+    // Convert the product media buffer to a Base64 string
     const firstImageBuffer = Buffer.isBuffer(product.media)
       ? product.media // If already a buffer, use it directly
       : Buffer.from(product.media, "base64"); // Convert from base64 if not a Buffer
 
-    // Compress image
+    // Compress the image using Sharp
     const compressedImage = await sharp(firstImageBuffer)
     .resize(300, 300) // Resize to thumbnail
+    // .toFormat("jpeg") // Ensure the format is JPEG
     .jpeg({ quality: 80 }) // Compress image
     .toBuffer();
-    // Convert compressed image to base64
+
+    // Convert the compressed image to Base64 with the correct MIME type
     const base64Image = compressedImage.toString("base64");
+
     // Email transporter setup
     const transporter = nodemailer.createTransport({
       service: "Gmail",
@@ -120,11 +123,14 @@ router.post("/send-email", authMiddleware, async (req, res) => {
       html: `
         <h1>Order Confirmation</h1>
         <p>Thank you for your purchase!</p>
+        <img src="data:image/jpeg;base64,${base64Image}" alt="${product.title}" style="width: 300px; height: auto; border: 1px solid #ddd;" />
         <p><strong>Product:</strong> ${product.title}</p>
         <p><strong>Price:</strong> ₹${product.price}</p>
-        <img src="data:image/jpeg;base64,${base64Image}" alt="${product.title}" style="width: 300px; height: auto; border: 1px solid #ddd;" />
+        <p><strong>Deliver to :</strong> ${deliverTo}</p>
+        <p><strong>Phone no :</strong> ${contactTo}</p>
         <p><strong>Shipping Address:</strong></p>
         <p>${deliveryAddress.address.street}, ${deliveryAddress.address.area}, ${deliveryAddress.address.city}, ${deliveryAddress.address.state}, ${deliveryAddress.address.pincode}</p>
+        <p>Product will deliver in ${deliveryDate} days to your address.</p>
         <p>Seller: ${sellerTitle}</p>
       `,
     };
