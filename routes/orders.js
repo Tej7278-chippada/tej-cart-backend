@@ -142,7 +142,12 @@ router.post("/send-email", authMiddleware, async (req, res) => {
 router.get("/my-orders", authMiddleware, async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user.id }).populate("product");
-    res.json(orders);
+    // Convert productPic (Buffer) to Base64 for the frontend
+    const ordersWithImages = orders.map(order => ({
+      ...order.toObject(),
+      productPic: order.productPic ? order.productPic.toString("base64") : null,
+    }));
+    res.json(ordersWithImages);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to fetch orders" });
