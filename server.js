@@ -7,6 +7,7 @@ const dotenv = require("dotenv");
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/authRoutes');
 const sellerRoutes = require('./routes/sellerAccountRoutes');
+const sellerOrders = require('./routes/sellerOrdersRoutes');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const Product = require('./models/Product');
@@ -61,6 +62,7 @@ app.get('/api/messages', async (req, res) => {
 app.use('/api/auth', authRoutes);
 // app.use('/api/users', userRoutes); // Mount the user routes at /api/users
 app.use('/api/seller', sellerRoutes); // Mount the user routes at /api/users
+app.use('/api/sellerOrders', sellerOrders);
 app.use('/api/products', require('./routes/products'));
 app.use('/api/productSeller', require('./routes/productRoutes'));
 // app.use('/api/offers', require('./routes/offers'));
