@@ -155,35 +155,40 @@ router.put('/:id', authSellerMiddleware, upload.array('media', 5), async (req, r
       return res.status(403).json({ message: 'You are not authorized to update this product' });
     }
 
-    const { title, price, categories, gender, stockStatus, stockCount, deliveryDays, description } = req.body;
+    const { title, price, categories, gender, stockStatus, stockCount, deliveryDays, description, existingMedia } = req.body;
 
-    const compressedImages = req.files ? await Promise.all(
-      req.files.map(async (file) => {
-        const buffer = await sharp(file.buffer)
-          .resize({ width: 800 })
-          .jpeg({ quality: 20 })
-          .toBuffer();
-        return buffer;
-      })
-    ) : undefined;
+    // Parse existingMedia to get the IDs of media to keep
+    const mediaToKeep = existingMedia ? JSON.parse(existingMedia) : [];
 
-    const updateData = {
-      title,
-      price,
-      categories,
-      gender,
-      stockStatus,
-      stockCount: stockStatus === 'In Stock' ? stockCount : undefined,
-      deliveryDays,
-      description,
-    };
+    // Filter existing media to remove any that are not in mediaToKeep
+    product.media = product.media.filter((_, index) => mediaToKeep.includes(index.toString()));
 
-    if (compressedImages) {
-      updateData.media = compressedImages;
+    // Add new media if provided
+    if (req.files) {
+      const compressedImages = await Promise.all(
+        req.files.map(async (file) => {
+          const buffer = await sharp(file.buffer)
+            .resize({ width: 800 })
+            .jpeg({ quality: 20 })
+            .toBuffer();
+          return buffer;
+        })
+      );
+      product.media.push(...compressedImages);
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(id, updateData, { new: true });
-    res.json(updatedProduct);
+    // Update other product fields
+    product.title = title;
+    product.price = price;
+    product.categories = categories;
+    product.gender = gender;
+    product.stockStatus = stockStatus;
+    product.stockCount = stockStatus === 'In Stock' ? stockCount : undefined;
+    product.deliveryDays = deliveryDays;
+    product.description = description;
+
+    await product.save();
+    res.json(product);
   } catch (err) {
     console.error('Error updating product:', err);
     res.status(500).json({ message: 'Error updating product' });
