@@ -7,7 +7,7 @@ const sharp = require('sharp');
 const { authMiddleware } = require('../middleware/auth');
 const User = require('../models/userModel');
 const Seller = require('../models/sellerModel');
-const Product = require('../models/productModel');
+const Product = require('../models/Product');
 const { authSellerMiddleware } = require('../middleware/sellerAuth');
 
 // Configure multer to store files in memory as buffers
