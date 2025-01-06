@@ -16,6 +16,7 @@ const Razorpay = require("razorpay");
 const orderRoutes = require("./routes/orders");
 const paymentRoutes = require("./routes/Payment");
 const paymentModel = require('./models/paymentModel');
+const likesRoutes = require('./routes/likesRoutes');
 
 dotenv.config();
 const app = express();
@@ -69,6 +70,7 @@ app.use('/api/productSeller', require('./routes/productRoutes'));
 app.use('/api/wishlist', require('./routes/wishlist'));
 app.use("/api/orders", orderRoutes);
 // app.use("/api/payments", paymentRoutes);
+app.use("/api/likes", likesRoutes);
 
 // Payment Route
 app.post("/api/payments", async (req, res) => {
