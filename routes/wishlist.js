@@ -131,5 +131,21 @@ router.get('/', authMiddleware, async (req, res) => {
     }
 });
 
+// Check if product is in wishlist
+router.get('/is-in-wishlist/:productId', authMiddleware, async (req, res) => {
+    const userId = req.user.id;
+    const { productId } = req.params;
+    
+    try {
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ message: 'User not found' });
+  
+      const isInWishlist = user.wishlist.includes(productId);
+      res.status(200).json({ isInWishlist });
+    } catch (error) {
+      res.status(500).json({ message: 'Server error', error });
+    }
+});
+  
 
 module.exports = router;
