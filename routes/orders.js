@@ -11,6 +11,9 @@ const nodemailer = require('nodemailer');
 
 const router = express.Router();
 const sharp = require("sharp");
+const { uploadImageToCloud } = require("../utils/aws");
+
+
 // Place Order
 router.post("/", authMiddleware, async (req, res) => {
   try {
@@ -42,7 +45,7 @@ router.post("/", authMiddleware, async (req, res) => {
 
     // Process the first image as Base64
     const productPicBuffer = product.media[0]
-      ? await sharp(product.media[0]).resize(300, 300).jpeg().toBuffer()
+      ? await sharp(product.media[0]).resize({ width: 300 }).jpeg().toBuffer() //resize(300, 300)
       : null;
 
     const order = new Order({
@@ -95,19 +98,22 @@ router.post("/send-email", authMiddleware, async (req, res) => {
     const { email, product, deliverTo, contactTo, deliveryAddress, deliveryDate, sellerTitle } = req.body;
 
     // Convert the product media buffer to a Base64 string
-    const firstImageBuffer = Buffer.isBuffer(product.media)
+    const firstImageBuffer = Buffer.isBuffer(product.media)  // Upload image to S3
       ? product.media // If already a buffer, use it directly
       : Buffer.from(product.media, "base64"); // Convert from base64 if not a Buffer
 
-    // Compress the image using Sharp
-    const compressedImage = await sharp(firstImageBuffer)
-    .resize(300, 300) // Resize to thumbnail
-    // .toFormat("jpeg") // Ensure the format is JPEG
-    .jpeg({ quality: 80 }) // Compress image
-    .toBuffer();
+    // // Compress the image using Sharp
+    // const compressedImage = await sharp(firstImageBuffer)
+    // .resize(300, 300) // Resize to thumbnail
+    // // .toFormat("jpeg") // Ensure the format is JPEG
+    // .jpeg({ quality: 80 }) // Compress image
+    // .toBuffer();
 
-    // Convert the compressed image to Base64 with the correct MIME type
-    const base64Image = compressedImage.toString("base64");
+    // // Convert the compressed image to Base64 with the correct MIME type
+    // const base64Image = compressedImage.toString("base64");
+
+    // Upload the image to S3 and get the public URL
+    const imageUrl = await uploadImageToCloud(firstImageBuffer);
 
     // Email transporter setup
     const transporter = nodemailer.createTransport({
@@ -126,7 +132,7 @@ router.post("/send-email", authMiddleware, async (req, res) => {
       html: `
         <h1>Order Confirmation</h1>
         <p>Thank you for your purchase!</p>
-        <img src="data:image/jpeg;base64,${base64Image}" alt="${product.title}" style="width: 300px; height: auto; border: 1px solid #ddd;" />
+        <img src="${imageUrl}" alt="${product.title}" style="width: 300px; height: auto; border: 1px solid #ddd;" />
         <p><strong>Product:</strong> ${product.title}</p>
         <p><strong>Price:</strong> ₹${product.price}</p>
         <p><strong>Deliver to :</strong> ${deliverTo}</p>
