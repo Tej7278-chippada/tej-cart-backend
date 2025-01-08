@@ -16,6 +16,7 @@ const OrderSchema = new mongoose.Schema({
   }, createdAt: { type: Date, default: Date.now } }],
   paymentStatus: { type: String, enum: ["Pending", "Completed", "Failed"], required: true },
   sellerTitle: { type: String, required: true }, // Bind to seller's title
+  sellerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Seller', required: true }, // Bind to seller's ID
   createdAt: { type: Date, default: Date.now },
 });
 

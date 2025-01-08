@@ -38,11 +38,11 @@ router.post("/", authMiddleware, async (req, res) => {
 
 // Payment Update
 router.post("/update", authMiddleware, async (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, status } = req.body;
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, status, contact, email, payment_method, order_title, seller_title } = req.body;
   try {
     const payment = await Payment.findOneAndUpdate(
       { razorpay_order_id },
-      { razorpay_payment_id, razorpay_signature, status },
+      { razorpay_payment_id, razorpay_signature, status, contact, email, payment_method, order_title, seller_title },
       { new: true }
     );
 

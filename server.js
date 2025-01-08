@@ -74,7 +74,7 @@ app.use("/api/likes", likesRoutes);
 
 // Payment Route
 app.post("/api/payments", async (req, res) => {
-  const { amount, contact, email, payment_method } = req.body; // Include contact and email in the request
+  const { amount, name, contact, email, payment_method } = req.body; // Include contact and email in the request
   try {
     const order = await razorpay.orders.create({
       amount: amount * 100, // Amount in paise
@@ -89,6 +89,7 @@ app.post("/api/payments", async (req, res) => {
       currency: order.currency,
       status: "created",
       created_at: new Date(),
+      name : name || "N/A",
       contact : contact || "N/A",
       email : email || "N/A",
       payment_method : payment_method || "N/A",
@@ -104,10 +105,10 @@ app.post("/api/payments", async (req, res) => {
 
 
 app.post("/api/payments/update", async (req, res) => {
-  const { razorpay_payment_id, razorpay_order_id, razorpay_signature, status,
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature, status, name,
     contact,
     email,
-    payment_method, } = req.body;
+    payment_method, order_title, seller_title } = req.body;
 
   try {
     // Verify payment signature (optional but recommended for security)
@@ -127,10 +128,11 @@ app.post("/api/payments/update", async (req, res) => {
       {
         razorpay_payment_id,
         status: "captured",
+        name : name || "N/A",
         contact : contact || "N/A",
         email : email || "N/A",
-        payment_method : payment_method || "N/A",
-        updated_at: new Date(),
+        payment_method : payment_method || "N/A", order_title : order_title, seller_title : seller_title,
+        updated_at: new Date(), 
       },
       { new: true }
     );

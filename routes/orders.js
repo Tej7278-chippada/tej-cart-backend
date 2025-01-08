@@ -14,9 +14,10 @@ const sharp = require("sharp");
 // Place Order
 router.post("/", authMiddleware, async (req, res) => {
   try {
-    const { productId, productTitle, orderPrice, deliveryAddress, paymentStatus, sellerTitle } = req.body;
+    const { productId, productTitle, orderPrice, deliveryAddress, paymentStatus, sellerTitle, sellerId } = req.body;
     // const { name, phone, email, address } = deliveryAddress; // Extract fields
     const userId = req.user.id;
+    // const sellerId = req.seller.id;
 
     const product = await Product.findById(productId);
     if (!product || product.stockCount <= 0) {
@@ -53,6 +54,7 @@ router.post("/", authMiddleware, async (req, res) => {
       userDeliveryAddresses: [userDeliveryAddress], // Save as an array
       paymentStatus,
       sellerTitle,
+      sellerId,
       createdAt: new Date(),
     });
 
@@ -74,6 +76,7 @@ router.post("/", authMiddleware, async (req, res) => {
         orderId: order._id,
         buyerInfo: { email: deliveryAddress.email, username: deliveryAddress.name, phone: deliveryAddress.phone },
         userDeliveryAddresses: [userDeliveryAddress],
+        createdAt: new Date(),
       });
       await seller.save();
     }

@@ -47,7 +47,8 @@ const sellerSchema = new mongoose.Schema({
         state: { type: String, required: true },
         pincode: { type: String, required: true },
       }, createdAt: { type: Date, default: Date.now } }],
-    }
+    },
+    {createdAt: { type: Date, default: Date.now }},
   ],
   otp: { type: Number },
   otpExpiry: { type: Date }
