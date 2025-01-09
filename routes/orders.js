@@ -8,19 +8,18 @@ const Seller = require("../models/sellerModel");
 const Product = require("../models/Product");
 require("dotenv").config();
 const nodemailer = require('nodemailer');
-
 const router = express.Router();
 const sharp = require("sharp");
 const { uploadImageToCloud } = require("../utils/aws");
+const paymentModel = require("../models/paymentModel");
 
 
 // Place Order
 router.post("/", authMiddleware, async (req, res) => {
   try {
-    const { productId, productTitle, orderPrice, deliveryAddress, paymentStatus, sellerTitle, sellerId } = req.body;
+    const { productId, productTitle, orderPrice, deliveryAddress, paymentStatus, sellerTitle, sellerId, razorpay_order_id } = req.body;
     // const { name, phone, email, address } = deliveryAddress; // Extract fields
     const userId = req.user.id;
-    // const sellerId = req.seller.id;
 
     const product = await Product.findById(productId);
     if (!product || product.stockCount <= 0) {
@@ -63,6 +62,18 @@ router.post("/", authMiddleware, async (req, res) => {
 
     await order.save();
 
+    // Retrieve the payment record associated with this user
+    const paymentRecord = await paymentModel.findOne({ razorpay_order_id: razorpay_order_id });
+    if (paymentRecord) {
+      // Update the corresponding Payment record with the orderId
+      paymentRecord.orderId = order._id;
+      paymentRecord.updatedAt = new Date();
+      await paymentRecord.save();
+      console.log("order id saved on payment's data...");
+    } else {
+      console.log("order id can not saved on payment's data..!");
+    }
+
     // Update product stock
     product.stockCount -= 1;
     await product.save();
@@ -85,7 +96,7 @@ router.post("/", authMiddleware, async (req, res) => {
     }
 
     res.status(201).json(order);
-    console.log('payment done & order placed');
+    console.log('payment done & order placed...');
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to place order" });

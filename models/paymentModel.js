@@ -17,6 +17,10 @@ const PaymentSchema = new mongoose.Schema(
     seller_title: { type: String },
     // created_at: { type: Date, default: Date.now },
     // updated_at: { type: Date },
+    orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    sellerId: { type: mongoose.Schema.Types.ObjectId, ref: "Seller" },
+    productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
   },
   { timestamps: true }
 );

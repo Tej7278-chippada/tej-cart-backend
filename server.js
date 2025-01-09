@@ -74,7 +74,7 @@ app.use("/api/likes", likesRoutes);
 
 // Payment Route
 app.post("/api/payments", async (req, res) => {
-  const { amount, name, contact, email, payment_method } = req.body; // Include contact and email in the request
+  const { amount, name, contact, email, payment_method, sellerId, userId, productId } = req.body; // Include contact and email in the request
   try {
     const order = await razorpay.orders.create({
       amount: amount * 100, // Amount in paise
@@ -93,6 +93,10 @@ app.post("/api/payments", async (req, res) => {
       contact : contact || "N/A",
       email : email || "N/A",
       payment_method : payment_method || "N/A",
+      // orderId,
+      userId,
+      sellerId,
+      productId
     });
     await payment.save();
 
