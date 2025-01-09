@@ -69,6 +69,11 @@ router.post("/", authMiddleware, async (req, res) => {
       paymentRecord.orderId = order._id;
       paymentRecord.updatedAt = new Date();
       await paymentRecord.save();
+
+      // Bind the paymentId to the order
+      order.paymentId = paymentRecord._id;
+      await order.save();
+      
       console.log("order id saved on payment's data...");
     } else {
       console.log("order id can not saved on payment's data..!");
