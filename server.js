@@ -172,7 +172,7 @@ app.get('/:id', async (req, res) => {
     }
   });
 const PORT = process.env.PORT || 5009;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port http://192.168.79.172:${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port http://192.168.114.172:${PORT}`));
 
 // Connect to MongoDB
 // mongoose.connect(process.env.MONGO_URI)
